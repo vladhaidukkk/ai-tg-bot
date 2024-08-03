@@ -1,6 +1,6 @@
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class ModelBase(AsyncAttrs, DeclarativeBase):
@@ -13,3 +13,10 @@ class ModelBase(AsyncAttrs, DeclarativeBase):
             "pk": "pk_%(table_name)s",
         }
     )
+
+
+class UserModel(ModelBase):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tg_id: Mapped[int] = mapped_column(unique=True)
