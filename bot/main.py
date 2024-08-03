@@ -4,12 +4,15 @@ import logging
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandObject, CommandStart
+from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.utils import markdown
 
 from bot.config import settings
 from bot.generators import generate_text
+from bot.keyboards import MainKbMessage, main_kb
+from bot.surveys import ChatSurvey
 
 root_router = Router(name=__name__)
 
@@ -17,18 +20,26 @@ root_router = Router(name=__name__)
 @root_router.message(CommandStart())
 async def start_command_handler(message: Message) -> None:
     text = markdown.text("👋", markdown.hbold(message.from_user.full_name))
-    await message.answer(text=text)
+    await message.answer(text=text, reply_markup=main_kb)
 
 
-@root_router.message(Command("ai", magic=F.args))
-async def ai_command_handler(message: Message, command: CommandObject) -> None:
-    result = await generate_text(query=command.args)
+@root_router.message(F.text == MainKbMessage.CHAT)
+async def chat_button_handler(message: Message, state: FSMContext) -> None:
+    await state.set_state(ChatSurvey.query)
+    await message.answer(text="🔍 What's your query?")
+
+
+@root_router.message(ChatSurvey.query)
+async def chat_query_state_handler(message: Message, state: FSMContext) -> None:
+    await state.set_state(ChatSurvey.wait)
+    result = await generate_text(query=message.text)
     await message.answer(text=result)
+    await state.clear()
 
 
-@root_router.message(Command("ai"))
-async def ai_command_fallback_handler(message: Message) -> None:
-    await message.answer(text="Pass a query to the /ai command")
+@root_router.message(ChatSurvey.wait)
+async def chat_wait_state_handler(message: Message) -> None:
+    await message.answer(text="⏳ Processing previous query. Please wait...")
 
 
 async def main() -> None:
