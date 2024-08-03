@@ -5,6 +5,7 @@ package-mode = false
 python = "^3.12"
 pydantic-settings = "^2.4.0"
 aiogram = "^3.10.0"
+openai = "^1.38.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.5.5"
