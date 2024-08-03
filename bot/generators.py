@@ -6,11 +6,11 @@ from openai.types import ChatModel
 
 from bot.config import settings
 
-client = AsyncOpenAI(api_key=settings.openai_api_key, http_client=httpx.AsyncClient(proxy=settings.openai_proxy))
+client = AsyncOpenAI(api_key=settings.openai.api_key, http_client=httpx.AsyncClient(proxy=settings.openai.proxy))
 
 
 async def generate_text(query: str, model: ChatModel = "gpt-3.5-turbo") -> str:
-    if settings.openai_stub_responses:
+    if settings.openai.stub_responses:
         await asyncio.sleep(2)
         return "Stub text"
 

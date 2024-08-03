@@ -43,7 +43,7 @@ async def chat_wait_state_handler(message: Message) -> None:
 
 
 async def main() -> None:
-    bot = Bot(token=settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = Bot(token=settings.bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
     dp.include_router(root_router)
     await dp.start_polling(bot)
