@@ -10,6 +10,7 @@ from aiogram.types import Message
 from aiogram.utils import markdown
 
 from bot.config import settings
+from bot.db.queries import add_user
 from bot.generators import generate_text
 from bot.keyboards import MainKbMessage, main_kb
 from bot.surveys import ChatSurvey
@@ -19,6 +20,7 @@ root_router = Router(name=__name__)
 
 @root_router.message(CommandStart())
 async def start_command_handler(message: Message) -> None:
+    await add_user(tg_id=message.from_user.id)
     text = markdown.text("👋", markdown.hbold(message.from_user.full_name))
     await message.answer(text=text, reply_markup=main_kb)
 
