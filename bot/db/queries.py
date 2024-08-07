@@ -16,3 +16,9 @@ async def add_user(tg_id: int) -> User | None:
         await session.commit()
 
         return new_user
+
+
+async def get_user(tg_id: int) -> User | None:
+    async with session_factory() as session:
+        query = select(User).filter_by(tg_id=tg_id)
+        return await session.scalar(query)
