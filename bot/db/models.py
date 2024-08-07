@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -20,3 +22,4 @@ class UserModel(ModelBase):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tg_id: Mapped[int] = mapped_column(unique=True)
+    balance: Mapped[Decimal] = mapped_column(server_default="0")
