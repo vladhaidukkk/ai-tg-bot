@@ -42,7 +42,7 @@ async def chat_button_handler(message: Message, user: User, state: FSMContext) -
 async def chat_query_state_handler(message: Message, state: FSMContext) -> None:
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
         await state.set_state(ChatSurvey.wait)
-        result = await generate_text(query=message.text)
+        result, total_tokens = await generate_text(query=message.text)
         await message.answer(text=result)
         await state.clear()
 
