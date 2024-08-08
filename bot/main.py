@@ -6,15 +6,15 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ChatAction, ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.utils import markdown
 from aiogram.utils.chat_action import ChatActionSender
 
 from bot.config import settings
 from bot.db.models import User
-from bot.db.queries import add_user
+from bot.db.queries import add_user, get_ai_models
 from bot.generators import generate_text
-from bot.keyboards import MainKbMessage, main_kb
+from bot.keyboards import MainKbMessage, build_ai_models_kb, main_kb
 from bot.middlewares import UserMiddleware
 from bot.surveys import ChatSurvey
 
@@ -32,18 +32,40 @@ async def start_command_handler(message: Message, user: User | None) -> None:
 @root_router.message(F.text == MainKbMessage.CHAT)
 async def chat_button_handler(message: Message, user: User, state: FSMContext) -> None:
     if user.balance > 0:
-        await state.set_state(ChatSurvey.query)
-        await message.answer(text="🔍 What's your query?")
+        await state.set_state(ChatSurvey.model)
+        ai_models = await get_ai_models()
+        await message.answer(
+            text="🤖 What model to use?",
+            reply_markup=build_ai_models_kb(ai_models=ai_models),
+        )
     else:
         await message.answer(text="💸 To use the chat, top up your balance")
+
+
+@root_router.message(ChatSurvey.model)
+async def chat_model_state_handler(message: Message, state: FSMContext) -> None:
+    ai_models = await get_ai_models()
+    ai_model_names = [ai_model.name for ai_model in ai_models]
+
+    if message.text not in ai_model_names:
+        await message.answer(
+            text="🚨 Invalid model input. Please click on a button",
+            reply_markup=build_ai_models_kb(ai_models=ai_models),
+        )
+        return
+
+    await state.update_data({"model": message.text})
+    await state.set_state(ChatSurvey.query)
+    await message.answer(text="🔍 What's your query?", reply_markup=ReplyKeyboardRemove())
 
 
 @root_router.message(ChatSurvey.query)
 async def chat_query_state_handler(message: Message, state: FSMContext) -> None:
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
+        data = await state.get_data()
         await state.set_state(ChatSurvey.wait)
-        result, total_tokens = await generate_text(query=message.text)
-        await message.answer(text=result)
+        result, total_tokens = await generate_text(query=message.text, model=data["model"])
+        await message.answer(text=result, reply_markup=main_kb)
         await state.clear()
 
 

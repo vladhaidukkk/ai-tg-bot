@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from bot.db.core import session_factory
-from bot.db.models import User
+from bot.db.models import AIModel, User
 
 
 async def add_user(tg_id: int) -> User | None:
@@ -22,3 +22,10 @@ async def get_user(tg_id: int) -> User | None:
     async with session_factory() as session:
         query = select(User).filter_by(tg_id=tg_id)
         return await session.scalar(query)
+
+
+async def get_ai_models() -> list[AIModel]:
+    async with session_factory() as session:
+        query = select(AIModel)
+        result = await session.execute(query)
+        return result.scalars().all()

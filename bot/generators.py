@@ -9,7 +9,7 @@ from bot.config import settings
 client = AsyncOpenAI(api_key=settings.openai.api_key, http_client=httpx.AsyncClient(proxy=settings.openai.proxy))
 
 
-async def generate_text(query: str, model: ChatModel = "gpt-3.5-turbo") -> tuple[str, int]:
+async def generate_text(query: str, model: ChatModel) -> tuple[str, int]:
     if settings.openai.stub_responses:
         await asyncio.sleep(2)
         content = "Stub text"
