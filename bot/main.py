@@ -7,12 +7,12 @@ from aiogram.enums import ParseMode
 
 from bot.config import settings
 from bot.handlers import router as root_router
-from bot.middlewares import UserMiddleware
+from bot.middlewares import InjectUserMiddleware
 
 
 async def main() -> None:
     dp = Dispatcher()
-    dp.message.outer_middleware(UserMiddleware())
+    dp.message.outer_middleware(InjectUserMiddleware())
     dp.include_router(root_router)
 
     bot = Bot(token=settings.bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))

@@ -9,9 +9,11 @@ from bot.db.models import User
 from bot.db.queries import get_ai_model, get_ai_models
 from bot.generators import generate_text
 from bot.keyboards import MainKbMessage, build_ai_models_kb, main_kb
+from bot.middlewares import RequireUserMiddleware
 from bot.surveys import ChatSurvey
 
 router = Router(name=__name__)
+router.message.outer_middleware(RequireUserMiddleware())
 
 
 @router.message(F.text == MainKbMessage.CHAT)
