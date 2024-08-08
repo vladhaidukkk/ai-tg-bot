@@ -29,3 +29,9 @@ async def get_ai_models() -> list[AIModel]:
         query = select(AIModel)
         result = await session.execute(query)
         return result.scalars().all()
+
+
+async def get_ai_model(name: str) -> AIModel | None:
+    async with session_factory() as session:
+        query = select(AIModel).filter_by(name=name)
+        return await session.scalar(query)

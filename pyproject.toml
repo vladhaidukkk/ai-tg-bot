@@ -18,5 +18,5 @@ pre-commit = "^3.8.0"
 line-length = 120
 
 [tool.ruff.lint]
-extend-select = ["I", "UP", "ANN", "S"]
-ignore = ["ANN101"]
+extend-select = ["I", "UP", "ANN", "S", "D"]
+ignore = ["ANN101", "D1", "D203", "D213"]

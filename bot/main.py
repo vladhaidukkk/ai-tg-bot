@@ -10,9 +10,10 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.utils import markdown
 from aiogram.utils.chat_action import ChatActionSender
 
+from bot.balance import predict_generation_cost
 from bot.config import settings
 from bot.db.models import User
-from bot.db.queries import add_user, get_ai_models
+from bot.db.queries import add_user, get_ai_model, get_ai_models
 from bot.generators import generate_text
 from bot.keyboards import MainKbMessage, build_ai_models_kb, main_kb
 from bot.middlewares import UserMiddleware
@@ -60,12 +61,21 @@ async def chat_model_state_handler(message: Message, state: FSMContext) -> None:
 
 
 @root_router.message(ChatSurvey.query)
-async def chat_query_state_handler(message: Message, state: FSMContext) -> None:
+async def chat_query_state_handler(message: Message, user: User, state: FSMContext) -> None:
     async with ChatActionSender.typing(bot=message.bot, chat_id=message.chat.id):
         data = await state.get_data()
-        await state.set_state(ChatSurvey.wait)
-        result, total_tokens = await generate_text(query=message.text, model=data["model"])
-        await message.answer(text=result, reply_markup=main_kb)
+        model_name = data["model"]
+
+        ai_model = await get_ai_model(name=model_name)
+        estimated_cost = predict_generation_cost(ai_model=ai_model, input_tokens=len(message.text))
+
+        if estimated_cost > user.balance:
+            await message.answer(text="💸 Top up your balance to send this query", reply_markup=main_kb)
+        else:
+            await state.set_state(ChatSurvey.wait)
+            result, total_tokens = await generate_text(query=message.text, model=model_name)
+            await message.answer(text=result, reply_markup=main_kb)
+
         await state.clear()
 
 
