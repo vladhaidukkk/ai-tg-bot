@@ -6,7 +6,7 @@ from aiogram.utils.chat_action import ChatActionSender
 
 from bot.balance import predict_generation_cost
 from bot.db.models import User
-from bot.db.queries import get_ai_model, get_ai_models
+from bot.db.queries import get_ai_model, get_ai_models, pay_for_generation
 from bot.generators import generate_text
 from bot.keyboards import MainKbMessage, build_ai_models_kb, main_kb
 from bot.middlewares import RequireUserMiddleware
@@ -60,6 +60,7 @@ async def chat_query_state_handler(message: Message, user: User, state: FSMConte
         else:
             await state.set_state(ChatSurvey.wait)
             result, total_tokens = await generate_text(query=message.text, model=model_name)
+            await pay_for_generation(tg_id=user.tg_id, model_name=ai_model.name, tokens=total_tokens)
             await message.answer(text=result, reply_markup=main_kb)
 
         await state.clear()
