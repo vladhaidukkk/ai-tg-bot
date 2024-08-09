@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.enums import ChatAction
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.utils import markdown
 from aiogram.utils.chat_action import ChatActionSender
 
 from bot.balance import predict_generation_cost
@@ -21,6 +22,9 @@ async def chat_button_handler(message: Message, user: User, state: FSMContext) -
     if user.balance > 0:
         await state.set_state(ChatSurvey.model)
         ai_models = await get_ai_models()
+        await message.answer(
+            text=markdown.text("💬", markdown.hbold("Chat session started!"), "Type /cancel to stop at any time")
+        )
         await message.answer(
             text="🤖 What model to use?",
             reply_markup=build_ai_models_kb(ai_models=ai_models),
