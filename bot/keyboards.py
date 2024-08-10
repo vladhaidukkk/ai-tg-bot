@@ -8,10 +8,11 @@ from bot.db.models import AIModel
 
 class MainKbMessage(StrEnum):
     CHAT = "💬 Chat"
+    IMAGE = "🌄 Image"
 
 
 main_kb = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text=MainKbMessage.CHAT)]],
+    keyboard=[[KeyboardButton(text=MainKbMessage.CHAT), KeyboardButton(text=MainKbMessage.IMAGE)]],
     resize_keyboard=True,
     input_field_placeholder="Select an action...",
 )

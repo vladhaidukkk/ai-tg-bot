@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from bot.db.core import session_factory
-from bot.db.models import AIModel, User
+from bot.db.models import AIModel, AIType, User
 from bot.errors import AIModelNotFoundError, UserAlreadyExistsError, UserNotFoundError
 
 
@@ -26,9 +26,11 @@ async def get_user(tg_id: int) -> User | None:
         return await session.scalar(query)
 
 
-async def get_ai_models() -> list[AIModel]:
+async def get_ai_models(type_name: str | None = None) -> list[AIModel]:
     async with session_factory() as session:
-        query = select(AIModel)
+        query = select(AIModel).join(AIType, AIModel.type_id == AIType.id)
+        if type_name:
+            query = query.filter(AIType.name == type_name)
         result = await session.execute(query)
         return result.scalars().all()
 
@@ -39,7 +41,7 @@ async def get_ai_model(name: str) -> AIModel | None:
         return await session.scalar(query)
 
 
-async def pay_for_generation(tg_id: int, model_name: str, tokens: int) -> Decimal:
+async def pay_for_generation(tg_id: int, model_name: str, usage: int) -> Decimal:
     async with session_factory() as session:
         user_query = select(User).filter_by(tg_id=tg_id)
         user = await session.scalar(user_query)
@@ -51,7 +53,7 @@ async def pay_for_generation(tg_id: int, model_name: str, tokens: int) -> Decima
         if not ai_model:
             raise AIModelNotFoundError(f"ai_model with name={model_name} not found")
 
-        cost = ai_model.price * Decimal(tokens)
+        cost = ai_model.price * Decimal(usage)
         user.balance -= cost
         await session.commit()
         return cost

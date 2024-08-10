@@ -5,7 +5,7 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.utils import markdown
 from aiogram.utils.chat_action import ChatActionSender
 
-from bot.balance import predict_generation_cost
+from bot.balance import predict_text_generation_cost
 from bot.db.models import User
 from bot.db.queries import get_ai_model, get_ai_models, pay_for_generation
 from bot.generators import generate_text
@@ -21,7 +21,7 @@ router.message.outer_middleware(RequireUserMiddleware())
 async def chat_button_handler(message: Message, user: User, state: FSMContext) -> None:
     if user.balance > 0:
         await state.set_state(ChatSurvey.model)
-        ai_models = await get_ai_models()
+        ai_models = await get_ai_models(type_name="text")
         await message.answer(
             text=markdown.text("💬", markdown.hbold("Chat session started!"), "Type /cancel to stop at any time")
         )
@@ -35,7 +35,7 @@ async def chat_button_handler(message: Message, user: User, state: FSMContext) -
 
 @router.message(ChatSurvey.model)
 async def chat_model_state_handler(message: Message, state: FSMContext) -> None:
-    ai_models = await get_ai_models()
+    ai_models = await get_ai_models(type_name="text")
     ai_model_names = [ai_model.name for ai_model in ai_models]
 
     if message.text not in ai_model_names:
@@ -57,14 +57,14 @@ async def chat_query_state_handler(message: Message, user: User, state: FSMConte
         model_name = data["model"]
 
         ai_model = await get_ai_model(name=model_name)
-        estimated_cost = predict_generation_cost(ai_model=ai_model, input_tokens=len(message.text))
+        estimated_cost = predict_text_generation_cost(ai_model=ai_model, input_tokens=len(message.text))
 
         if estimated_cost > user.balance:
             await message.answer(text="💸 Top up your balance to send this query", reply_markup=main_kb)
         else:
             await state.set_state(ChatSurvey.wait)
             result, total_tokens = await generate_text(query=message.text, model=model_name)
-            await pay_for_generation(tg_id=user.tg_id, model_name=ai_model.name, tokens=total_tokens)
+            await pay_for_generation(tg_id=user.tg_id, model_name=ai_model.name, usage=total_tokens)
             await message.answer(text=result, reply_markup=main_kb)
 
         await state.clear()
