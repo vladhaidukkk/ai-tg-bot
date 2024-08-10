@@ -20,14 +20,15 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     conn = op.get_bind()
     type_id = conn.scalar(sa.text("SELECT id FROM ai_types WHERE name = 'text'"))
+    # price = (input_token + output_token) * 1.5
     conn.execute(
         sa.text("""
             INSERT INTO ai_models (name, type_id, price) VALUES
-            ('gpt-3.5-turbo', :type_id, 0.000009),
-            ('gpt-4', :type_id, 0.00009),
-            ('gpt-4-turbo', :type_id, 0.00004),
-            ('gpt-4o', :type_id, 0.00002),
-            ('gpt-4o-mini', :type_id, 0.00000075)
+            ('gpt-3.5-turbo', :type_id, 0.0000135),
+            ('gpt-4', :type_id, 0.000135),
+            ('gpt-4-turbo', :type_id, 0.00006),
+            ('gpt-4o', :type_id, 0.00003),
+            ('gpt-4o-mini', :type_id, 0.000001125)
         """),
         {"type_id": type_id},
     )
