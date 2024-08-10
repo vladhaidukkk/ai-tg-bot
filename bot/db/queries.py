@@ -1,23 +1,23 @@
 from decimal import Decimal
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from bot.db.core import session_factory
 from bot.db.models import AIModel, User
+from bot.errors import AIModelNotFoundError, UserAlreadyExistsError, UserNotFoundError
 
 
-async def add_user(tg_id: int) -> User | None:
+async def add_user(tg_id: int) -> User:
     async with session_factory() as session:
-        find_user_query = select(User).filter_by(tg_id=tg_id)
-        existing_user = await session.scalar(find_user_query)
-        if existing_user:
-            return None
-
-        new_user = User(tg_id=tg_id)
-        session.add(new_user)
-        await session.commit()
-
-        return new_user
+        try:
+            new_user = User(tg_id=tg_id)
+            session.add(new_user)
+            await session.commit()
+        except IntegrityError as err:
+            raise UserAlreadyExistsError(f"user with tg_id={tg_id} already exists") from err
+        else:
+            return new_user
 
 
 async def get_user(tg_id: int) -> User | None:
@@ -39,19 +39,17 @@ async def get_ai_model(name: str) -> AIModel | None:
         return await session.scalar(query)
 
 
-async def pay_for_generation(tg_id: int, model_name: str, tokens: int) -> Decimal | None:
+async def pay_for_generation(tg_id: int, model_name: str, tokens: int) -> Decimal:
     async with session_factory() as session:
-        find_user_query = select(User).filter_by(tg_id=tg_id)
-        user = await session.scalar(find_user_query)
+        user_query = select(User).filter_by(tg_id=tg_id)
+        user = await session.scalar(user_query)
         if not user:
-            # It should be an error
-            return None
+            raise UserNotFoundError(f"user with tg_id={tg_id} not found")
 
-        find_ai_model_query = select(AIModel).filter_by(name=model_name)
-        ai_model = await session.scalar(find_ai_model_query)
+        ai_model_query = select(AIModel).filter_by(name=model_name)
+        ai_model = await session.scalar(ai_model_query)
         if not ai_model:
-            # It should be an error
-            return None
+            raise AIModelNotFoundError(f"ai_model with name={model_name} not found")
 
         cost = ai_model.price * Decimal(tokens)
         user.balance -= cost
