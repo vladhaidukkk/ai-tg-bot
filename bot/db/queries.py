@@ -33,6 +33,13 @@ async def add_user(session: AsyncSession, tg_id: int) -> User:
 
 
 @inject_session
+async def get_users(session: AsyncSession) -> list[User]:
+    query = select(User)
+    result = await session.execute(query)
+    return list(result.scalars().all())
+
+
+@inject_session
 async def get_user(session: AsyncSession, tg_id: int) -> User | None:
     query = select(User).filter_by(tg_id=tg_id)
     return await session.scalar(query)
@@ -40,9 +47,9 @@ async def get_user(session: AsyncSession, tg_id: int) -> User | None:
 
 @inject_session
 async def get_ai_models(session: AsyncSession, type_name: str | None = None) -> list[AIModel]:
-    query = select(AIModel).join(AIType, AIModel.type_id == AIType.id)
+    query = select(AIModel)
     if type_name:
-        query = query.filter(AIType.name == type_name)
+        query = query.join(AIType, AIModel.type_id == AIType.id).filter(AIType.name == type_name)
     result = await session.execute(query)
     return list(result.scalars().all())
 

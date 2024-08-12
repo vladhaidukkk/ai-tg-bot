@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class BotSettings(BaseModel):
     token: str
+    admins: list[int] = Field(default_factory=list)
 
 
 class OpenAISettings(BaseModel):

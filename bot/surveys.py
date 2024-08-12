@@ -11,3 +11,7 @@ class ImageSurvey(StatesGroup):
     model = State()
     query = State()
     wait = State()
+
+
+class NotifySurvey(StatesGroup):
+    message = State()
